@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------------
-Copyright (c) 2010-2011, Code Aurora Forum. All rights reserved.
+Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -594,7 +594,7 @@ private:
 #ifdef USE_ION
     int alloc_map_ion_memory(OMX_U32 buffer_size,
               OMX_U32 alignment, struct ion_allocation_data *alloc_data,
-              struct ion_fd_data *fd_data);
+              struct ion_fd_data *fd_data,int flag);
     void free_ion_memory(struct vdec_ion *buf_ion_info);
 #endif
 
