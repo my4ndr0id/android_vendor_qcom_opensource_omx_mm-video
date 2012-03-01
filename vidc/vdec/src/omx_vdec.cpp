@@ -477,6 +477,7 @@ omx_vdec::omx_vdec(): m_state(OMX_StateInvalid),
                     ,iDivXDrmDecrypt(NULL)
 #endif
                     ,m_desc_buffer_ptr(NULL)
+                    ,m_extradata(NULL)
 {
   /* Assumption is that , to begin with , we have all the frames with decoder */
   DEBUG_PRINT_HIGH("In OMX vdec Constructor");
@@ -2933,6 +2934,7 @@ OMX_ERRORTYPE  omx_vdec::set_parameter(OMX_IN OMX_HANDLETYPE     hComp,
         DEBUG_PRINT_ERROR("Set Param in Invalid State \n");
         return OMX_ErrorIncorrectStateOperation;
     }
+
   switch(paramIndex)
   {
     case OMX_IndexParamPortDefinition:
@@ -3597,6 +3599,24 @@ OMX_ERRORTYPE  omx_vdec::get_config(OMX_IN OMX_HANDLETYPE      hComp,
       }
       break;
     }
+    case OMX_QcomIndexParamFrameInfoExtraData:
+    {
+      OMX_QCOM_EXTRADATA_FRAMEINFO *extradata =
+        (OMX_QCOM_EXTRADATA_FRAMEINFO *) configData;
+
+      if(m_extradata == NULL){
+          DEBUG_PRINT_ERROR("get_config: m_extradata not set. "
+                            "Aspect Ratio information missing!!");
+      }
+      else {
+        extradata->aspectRatio.aspectRatioX =
+           m_extradata->aspectRatio.aspectRatioX;
+         extradata->aspectRatio.aspectRatioY =
+            m_extradata->aspectRatio.aspectRatioY;
+      }
+      break;
+    }
+
     default:
     {
       DEBUG_PRINT_ERROR("get_config: unknown param %d\n",configIndex);
@@ -6322,6 +6342,7 @@ OMX_ERRORTYPE omx_vdec::fill_buffer_done(OMX_HANDLETYPE hComp,
                                OMX_BUFFERHEADERTYPE * buffer)
 {
   OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO *pPMEMInfo = NULL;
+
   if (!buffer || (buffer - m_out_mem_ptr) >= drv_ctx.op_buf.actualcount)
   {
     DEBUG_PRINT_ERROR("\n [FBD] ERROR in ptr(%p)", buffer);
@@ -6666,6 +6687,8 @@ int omx_vdec::async_message_process (void *context, void* message)
         output_respbuf->flags = vdec_msg->msgdata.output_frame.flags;
         output_respbuf->pic_type = vdec_msg->msgdata.output_frame.pic_type;
         output_respbuf->interlaced_format = vdec_msg->msgdata.output_frame.interlaced_format;
+        output_respbuf->aspect_ratio_info =
+           vdec_msg->msgdata.output_frame.aspect_ratio_info;
 
 
         if (omx->output_use_buffer)
@@ -7942,6 +7965,7 @@ void omx_vdec::handle_extradata(OMX_BUFFERHEADERTYPE *p_buf_hdr)
   OMX_U32 num_conceal_MB = 0;
   OMX_S64 ts_in_sei = 0;
   OMX_U32 frame_rate = 0;
+
   p_extra = (OMX_OTHER_EXTRADATATYPE *)
            ((unsigned)(p_buf_hdr->pBuffer + p_buf_hdr->nOffset +
             p_buf_hdr->nFilledLen + 3)&(~3));
@@ -8049,7 +8073,9 @@ void omx_vdec::handle_extradata(OMX_BUFFERHEADERTYPE *p_buf_hdr)
         h264_parser->get_frame_rate(&frame_rate);
     append_frame_info_extradata(p_extra, num_conceal_MB,
         ((struct vdec_output_frameinfo *)p_buf_hdr->pOutputPortPrivate)->pic_type,
-        p_buf_hdr->nTimeStamp, frame_rate);
+        p_buf_hdr->nTimeStamp, frame_rate,
+        &((struct vdec_output_frameinfo *)
+          p_buf_hdr->pOutputPortPrivate)->aspect_ratio_info);
     p_extra = (OMX_OTHER_EXTRADATATYPE *) (((OMX_U8 *) p_extra) + p_extra->nSize);
   }
   if ((client_extradata & OMX_PORTDEF_EXTRADATA) &&
@@ -8272,7 +8298,8 @@ void omx_vdec::append_interlace_extradata(OMX_OTHER_EXTRADATATYPE *extra,
 }
 
 void omx_vdec::append_frame_info_extradata(OMX_OTHER_EXTRADATATYPE *extra,
-    OMX_U32 num_conceal_mb, OMX_U32 picture_type, OMX_S64 timestamp, OMX_U32 frame_rate)
+    OMX_U32 num_conceal_mb, OMX_U32 picture_type, OMX_S64 timestamp,
+    OMX_U32 frame_rate, struct vdec_aspectratioinfo *aspect_ratio_info)
 {
   OMX_QCOM_EXTRADATA_FRAMEINFO *frame_info = NULL;
   extra->nSize = OMX_FRAMEINFO_EXTRADATA_SIZE;
@@ -8281,6 +8308,7 @@ void omx_vdec::append_frame_info_extradata(OMX_OTHER_EXTRADATATYPE *extra,
   extra->eType = (OMX_EXTRADATATYPE)OMX_ExtraDataFrameInfo;
   extra->nDataSize = sizeof(OMX_QCOM_EXTRADATA_FRAMEINFO);
   frame_info = (OMX_QCOM_EXTRADATA_FRAMEINFO *)extra->data;
+
   switch (picture_type)
   {
     case PICTURE_TYPE_I:
@@ -8306,11 +8334,42 @@ void omx_vdec::append_frame_info_extradata(OMX_OTHER_EXTRADATATYPE *extra,
   if (drv_ctx.decoder_format == VDEC_CODECTYPE_H264)
   {
     h264_parser->fill_pan_scan_data(&frame_info->panScan, timestamp);
-    h264_parser->fill_aspect_ratio_info(&frame_info->aspectRatio);
   }
+
+  fill_aspect_ratio_info(aspect_ratio_info, frame_info);
   frame_info->nConcealedMacroblocks = num_conceal_mb;
   frame_info->nFrameRate = frame_rate;
   print_debug_extradata(extra);
+}
+
+void omx_vdec::fill_aspect_ratio_info(
+                       struct vdec_aspectratioinfo *aspect_ratio_info,
+                       OMX_QCOM_EXTRADATA_FRAMEINFO *frame_info)
+{
+  m_extradata = frame_info;
+
+  m_extradata->aspectRatio.aspectRatioX = 0;
+  m_extradata->aspectRatio.aspectRatioY = 0;
+
+  if(drv_ctx.decoder_format == VDEC_CODECTYPE_H264)
+  {
+     h264_parser->fill_aspect_ratio_info(&m_extradata->aspectRatio);
+  }
+#ifdef MAX_RES_1080P
+  else if(drv_ctx.decoder_format == VDEC_CODECTYPE_MPEG4 ||
+          drv_ctx.decoder_format == VDEC_CODECTYPE_DIVX_3 ||
+          drv_ctx.decoder_format == VDEC_CODECTYPE_DIVX_4 ||
+          drv_ctx.decoder_format == VDEC_CODECTYPE_DIVX_5 ||
+          drv_ctx.decoder_format == VDEC_CODECTYPE_DIVX_6)
+  {
+      mp4_fill_aspect_ratio_info(aspect_ratio_info,m_extradata);
+  }
+#endif
+  if(m_extradata->aspectRatio.aspectRatioX == 0 ||
+     m_extradata->aspectRatio.aspectRatioY == 0) {
+       m_extradata->aspectRatio.aspectRatioX = 1;
+       m_extradata->aspectRatio.aspectRatioY = 1;
+  }
 }
 
 void omx_vdec::append_portdef_extradata(OMX_OTHER_EXTRADATATYPE *extra)

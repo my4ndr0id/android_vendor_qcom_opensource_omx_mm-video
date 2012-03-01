@@ -577,10 +577,13 @@ private:
     void append_interlace_extradata(OMX_OTHER_EXTRADATATYPE *extra,
                                     OMX_U32 interlaced_format_type);
     void append_frame_info_extradata(OMX_OTHER_EXTRADATATYPE *extra,
-                                     OMX_U32 num_conceal_mb,
-                                     OMX_U32 picture_type,
-                                     OMX_S64 timestamp,
-                                     OMX_U32 frame_rate);
+                               OMX_U32 num_conceal_mb,
+                               OMX_U32 picture_type,
+                               OMX_S64 timestamp,
+                               OMX_U32 frame_rate,
+                               struct vdec_aspectratioinfo *aspect_ratio_info);
+    void fill_aspect_ratio_info(struct vdec_aspectratioinfo *aspect_ratio_info,
+                                OMX_QCOM_EXTRADATA_FRAMEINFO *frame_info);
     void append_terminator_extradata(OMX_OTHER_EXTRADATATYPE *extra);
     OMX_ERRORTYPE update_portdef(OMX_PARAM_PORTDEFINITIONTYPE *portDefn);
     void append_portdef_extradata(OMX_OTHER_EXTRADATATYPE *extra);
@@ -793,6 +796,7 @@ private:
     omx_time_stamp_reorder time_stamp_dts;
     desc_buffer_hdr *m_desc_buffer_ptr;
     bool secure_mode;
+    OMX_QCOM_EXTRADATA_FRAMEINFO *m_extradata;
 };
 
 #endif // __OMX_VDEC_H__
