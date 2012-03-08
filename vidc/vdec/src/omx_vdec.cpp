@@ -1442,7 +1442,7 @@ OMX_ERRORTYPE omx_vdec::component_init(OMX_STRING role)
       }
       else
       {
-        if (drv_ctx.disable_dmx)
+        if (drv_ctx.disable_dmx && !secure_mode)
         {
           DEBUG_PRINT_HIGH("DMX disable is supported");
 
@@ -1453,6 +1453,9 @@ OMX_ERRORTYPE omx_vdec::component_init(OMX_STRING role)
               drv_ctx.disable_dmx = false;
               eRet = OMX_ErrorHardware;
           }
+        }
+        else {
+          drv_ctx.disable_dmx = false;
         }
       }
     }
