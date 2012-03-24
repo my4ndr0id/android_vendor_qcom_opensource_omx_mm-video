@@ -53,6 +53,7 @@ AC_ARG_WITH([sanitized-headers],
 
 AC_CONFIG_FILES([     \
 	Makefile \
+    DivxDrmDecrypt/Makefile \
 	vidc/Makefile \
 	vidc/vdec/Makefile \
 	vidc/venc/Makefile \

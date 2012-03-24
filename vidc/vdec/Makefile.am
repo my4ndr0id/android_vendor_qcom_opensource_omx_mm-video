@@ -27,6 +27,7 @@ AM_CPPFLAGS += -I../common/inc
 
 c_sources = src/frameparser.cpp
 c_sources += src/h264_utils.cpp
+c_sources += src/ts_parser.cpp
 if TARGET_MSM8660
 c_sources += src/mp4_utils.cpp
 endif
@@ -36,7 +37,7 @@ c_sources += ../common/src/extra_data_handler.cpp
 lib_LTLIBRARIES = libOmxVdec.la
 libOmxVdec_la_SOURCES = $(c_sources)
 libOmxVdec_la_CFLAGS = $(AM_CFLAGS) -fPIC
-libOmxVdec_la_LDLIBS = -lOmxcore -lstdc++ -lpthread
+libOmxVdec_la_LDLIBS = -lOmxCore -lstdc++ -lpthread -ldivxdrmdecrypt
 libOmxVdec_la_LDFLAGS = -shared -version-info $(OMXVIDEO_LIBRARY_VERSION)
 
 bin_PROGRAMS = mm-vdec-omx-test

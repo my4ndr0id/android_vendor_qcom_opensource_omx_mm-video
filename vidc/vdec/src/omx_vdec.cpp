@@ -131,6 +131,11 @@ char ouputextradatafilename [] = "/data/extradata";
     }
 #endif//_ANDROID_
 
+#ifndef _ANDROID_
+#include <glib.h>
+#define strlcpy g_strlcpy
+#endif
+
 #define Log2(number, power)  { OMX_U32 temp = number; power = 0; while( (0 == (temp & 0x1)) &&  power < 16) { temp >>=0x1; power++; } }
 #define Q16ToFraction(q,num,den) { OMX_U32 power; Log2(q,power);  num = q >> power; den = 0x1 << (16 - power); }
 
@@ -553,11 +558,13 @@ omx_vdec::~omx_vdec()
   pthread_join(async_thread_id,NULL);
   pthread_mutex_destroy(&m_lock);
   sem_destroy(&m_cmd_lock);
+#ifdef _ANDROID_
   if (perf_flag)
   {
     DEBUG_PRINT_HIGH("--> TOTAL PROCESSING TIME");
     dec_time.end();
   }
+#endif /* _ANDROID_ */
   DEBUG_PRINT_HIGH("Exit OMX vdec Destructor");
 }
 
@@ -3895,7 +3902,9 @@ OMX_ERRORTYPE  omx_vdec::use_output_buffer(
   struct vdec_ioctl_msg ioctl_msg = {NULL,NULL};
   struct vdec_setbuffer_cmd setbuffers;
   OMX_PTR privateAppData = NULL;
+#if defined(_ANDROID_HONEYCOMB_) || defined(_ANDROID_ICS_)
   private_handle_t *handle = NULL;
+#endif
   OMX_U8 *buff = buffer;
 
   if (!m_out_mem_ptr) {
@@ -4736,7 +4745,11 @@ OMX_ERRORTYPE  omx_vdec::allocate_output_buffer(
 #endif
 
     if(m_out_mem_ptr && pPtr && drv_ctx.ptr_outputbuffer
-       && drv_ctx.ptr_respbuffer && m_heap_ptr)
+       && drv_ctx.ptr_respbuffer
+#ifdef _ANDROID_
+	   && m_heap_ptr
+#endif
+	   )
     {
       drv_ctx.ptr_outputbuffer[0].mmaped_size =
         (drv_ctx.op_buf.buffer_size *
@@ -5284,7 +5297,6 @@ OMX_ERRORTYPE  omx_vdec::empty_this_buffer(OMX_IN OMX_HANDLETYPE         hComp,
         DEBUG_PRINT_LOW("\nERROR:iDivXDrmDecrypt->Decrypt %d", drmErr);
     }
   }
-#endif //_ANDROID_
   if (perf_flag)
   {
     if (!latency)
@@ -5294,6 +5306,7 @@ OMX_ERRORTYPE  omx_vdec::empty_this_buffer(OMX_IN OMX_HANDLETYPE         hComp,
       dec_time.start();
     }
   }
+#endif //_ANDROID_
 
   if (arbitrary_bytes)
   {
@@ -6374,6 +6387,7 @@ OMX_ERRORTYPE omx_vdec::fill_buffer_done(OMX_HANDLETYPE hComp,
         set_frame_rate(buffer->nTimeStamp);
       else if (arbitrary_bytes)
         adjust_timestamp(buffer->nTimeStamp);
+#ifdef _ANDROID_
       if (perf_flag)
       {
         if (!proc_frms)
@@ -6396,6 +6410,7 @@ OMX_ERRORTYPE omx_vdec::fill_buffer_done(OMX_HANDLETYPE hComp,
           proc_frms = 0;
         }
       }
+#endif //_ANDROID_
 
 #ifdef OUTPUT_EXTRADATA_LOG
   if (outputExtradataFile)
@@ -7958,9 +7973,11 @@ void omx_vdec::handle_extradata(OMX_BUFFERHEADERTYPE *p_buf_hdr)
           p_extra->eType = (OMX_EXTRADATATYPE)OMX_ExtraDataConcealMB;
         else
           p_extra->eType = OMX_ExtraDataMax; // Invalid type to avoid expose this extradata to OMX client
+#ifdef _ANDROID_
         if (m_debug_concealedmb) {
             DEBUG_PRINT_HIGH("Concealed MB percentage is %u", num_conceal_MB);
         }
+#endif /* _ANDROID_ */
       }
       else if (p_extra->eType == VDEC_EXTRADATA_SEI)
       {
@@ -8149,6 +8166,7 @@ OMX_U32 omx_vdec::count_MB_in_extradata(OMX_OTHER_EXTRADATATYPE *extra)
 
 void omx_vdec::print_debug_extradata(OMX_OTHER_EXTRADATATYPE *extra)
 {
+#ifdef _ANDROID_
   if (!m_debug_extradata)
      return;
 
@@ -8220,6 +8238,7 @@ void omx_vdec::print_debug_extradata(OMX_OTHER_EXTRADATATYPE *extra)
   {
     DEBUG_PRINT_HIGH("======= End of Driver Extradata ========");
   }
+#endif /* _ANDROID_ */
 }
 
 void omx_vdec::append_interlace_extradata(OMX_OTHER_EXTRADATATYPE *extra,

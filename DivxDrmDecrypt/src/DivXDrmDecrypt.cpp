@@ -31,7 +31,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //#define LOG_NDEBUG 0
 #define LOG_TAG "DivXDrmDecrypt"
+#ifdef _ANDROID_
 #include <utils/Log.h>
+#else
+#include <stdio.h>
+#define LOGE(fmt, args...) fprintf(stderr, fmt, ##args)
+#endif /* _ANDROID_ */
 
 static const char* DIVX_DRM_SHIM_LIB = "libSHIMDivxDrm.so";
 

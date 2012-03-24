@@ -49,6 +49,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <media/stagefright/HardwareAPI.h>
 #include <gralloc_priv.h>
 #endif
+#ifndef _ANDROID_
+#include <glib.h>
+#define strlcpy g_strlcpy
+#endif
 #define H264_SUPPORTED_WIDTH (480)
 #define H264_SUPPORTED_HEIGHT (368)
 

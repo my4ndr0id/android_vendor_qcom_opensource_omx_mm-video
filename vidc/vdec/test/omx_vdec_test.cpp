@@ -64,6 +64,10 @@ extern "C"{
                            // from the SEI and VUI data for H264
 
 #else
+#include <glib.h>
+#define strlcpy g_strlcpy
+
+#define LOGE(fmt, args...) fprintf(stderr, fmt, ##args)
 #define DEBUG_PRINT printf
 #define DEBUG_PRINT_ERROR printf
 #endif /* _ANDROID_ */

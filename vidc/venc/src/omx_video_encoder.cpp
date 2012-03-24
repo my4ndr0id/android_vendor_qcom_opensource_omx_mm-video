@@ -35,6 +35,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef _ANDROID_
 #include <cutils/properties.h>
 #endif
+#ifndef _ANDROID_
+#include <glib.h>
+#define strlcpy g_strlcpy
+#endif
 /*----------------------------------------------------------------------------
 * Preprocessor Definitions and Constants
 * -------------------------------------------------------------------------*/

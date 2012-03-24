@@ -41,7 +41,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C"{
 #include<utils/Log.h>
 }
-#endif
+#else
+#define LOGE(fmt, args...) fprintf(stderr, fmt, ##args)
+#endif /* _ANDROID_ */
 
 class omx_time_stamp_reorder {
 public:
