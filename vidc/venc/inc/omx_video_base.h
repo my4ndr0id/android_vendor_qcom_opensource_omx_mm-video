@@ -58,6 +58,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "qc_omx_component.h"
 #include "omx_video_common.h"
 #include "extra_data_handler.h"
+#include <linux/videodev2.h>
 
 #ifdef _ANDROID_
 using namespace android;
@@ -178,10 +179,12 @@ public:
   virtual OMX_U32 dev_start(void) = 0;
   virtual OMX_U32 dev_flush(unsigned) = 0;
   virtual OMX_U32 dev_resume(void) = 0;
-  virtual bool dev_use_buf(void *,unsigned) = 0;
+  virtual OMX_U32 dev_start_done(void) = 0;
+  virtual OMX_U32 dev_stop_done(void) = 0;
+  virtual bool dev_use_buf(void *,unsigned,unsigned) = 0;
   virtual bool dev_free_buf(void *,unsigned) = 0;
-  virtual bool dev_empty_buf(void *, void *) = 0;
-  virtual bool dev_fill_buf(void *buffer, void *) = 0;
+  virtual bool dev_empty_buf(void *, void *,unsigned,unsigned) = 0;
+  virtual bool dev_fill_buf(void *buffer, void *,unsigned,unsigned) = 0;
   virtual bool dev_get_buf_req(OMX_U32 *,OMX_U32 *,OMX_U32 *,OMX_U32) = 0;
   virtual bool dev_get_seq_hdr(void *, unsigned, unsigned *) = 0;
   virtual bool dev_loaded_start(void) = 0;

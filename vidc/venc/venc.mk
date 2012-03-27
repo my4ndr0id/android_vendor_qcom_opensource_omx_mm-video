@@ -38,7 +38,11 @@ all: libOmxVenc.so mm-venc-omx-test720p mm-video-encdrv-test
 
 SRCS := $(VENC_SRC)/src/omx_video_base.cpp
 SRCS += $(VENC_SRC)/src/omx_video_encoder.cpp
+ifeq ($(call is-board-platform-in-list,copper),true)
+SRCS += $(VENC_SRC)/src/video_encoder_device_copper.cpp
+else
 SRCS += $(VENC_SRC)/src/video_encoder_device.cpp
+endif
 
 CPPFLAGS += -I$(VENC_SRC)/inc
 CPPFLAGS += -I$(SYSROOTINC_DIR)/mm-core

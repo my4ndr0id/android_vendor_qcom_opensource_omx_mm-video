@@ -221,6 +221,11 @@ struct ProfileType
    OMX_U32 nFrameWidth;
    OMX_U32 nFrameHeight;
    OMX_U32 nFrameBytes;
+#ifdef BADGER
+   OMX_U32 nFramestride;
+   OMX_U32 nFrameScanlines;
+   OMX_U32 nFrameRead;
+#endif
    OMX_U32 nBitrate;
    float nFramerate;
    char* cInFileName;
@@ -517,7 +522,6 @@ OMX_ERRORTYPE ConfigureEncoder()
 #ifdef QCOM_EXT
       OMX_QCOM_PARAM_PORTDEFINITIONTYPE qPortDefnType;
 #endif
-
    portdef.nPortIndex = (OMX_U32) 0; // input
    result = OMX_GetParameter(m_hHandle,
                              OMX_IndexParamPortDefinition,
@@ -1432,6 +1436,17 @@ OMX_ERRORTYPE VencTest_ReadAndEmpty(OMX_BUFFERHEADERTYPE* pYUVBuffer)
    {
       return OMX_ErrorUndefined;
    }
+#elif BADGER
+   int bytes;
+   E("will read YUV now: %d bytes to buffer %p\n", m_sProfile.nFrameRead, pYUVBuffer->pBuffer);
+   E("W: %d H: %d Str: %d scal: %d \n", m_sProfile.nFrameWidth, m_sProfile.nFrameHeight,
+		m_sProfile.nFramestride, m_sProfile.nFrameScanlines);
+   bytes = read(m_nInFd, pYUVBuffer->pBuffer, m_sProfile.nFrameRead);
+   if (bytes != m_sProfile.nFrameRead) {
+		E("read failed: %d != %d\n", read, m_sProfile.nFrameRead);
+		return OMX_ErrorUndefined;
+   }
+   E("\n\nRead %d bytes\n\n\n", m_sProfile.nFrameRead);
 #else
          OMX_U32 bytestoread = m_sProfile.nFrameWidth*m_sProfile.nFrameHeight;
          // read Y first
@@ -1472,7 +1487,11 @@ OMX_ERRORTYPE VencTest_ReadAndEmpty(OMX_BUFFERHEADERTYPE* pYUVBuffer)
    D("about to call VencTest_EncodeFrame...");
    pthread_mutex_lock(&m_mutex);
    ++m_nFrameIn;
+#ifdef BADGER
+   pYUVBuffer->nFilledLen = m_sProfile.nFrameRead;
+#else
    pYUVBuffer->nFilledLen = m_sProfile.nFrameBytes;
+#endif
    D("Called Buffer with Data filled length %d",pYUVBuffer->nFilledLen);
 
       result = VencTest_EncodeFrame(pYUVBuffer->pBuffer,
@@ -1836,6 +1855,14 @@ void parseArgs(int argc, char** argv)
       usage(argv[0]);
    }
 
+#ifdef BADGER
+   m_sProfile.nFramestride =  (m_sProfile.nFrameWidth + 31) & (~31);
+   m_sProfile.nFrameScanlines = (m_sProfile.nFrameHeight + 31) & (~31);
+   m_sProfile.nFrameBytes = ((m_sProfile.nFramestride * m_sProfile.nFrameScanlines * 3/2) + 4095) & (~4095);
+   E("stride: %d, Scanlines: %d, Size: %d",
+     m_sProfile.nFramestride, m_sProfile.nFrameScanlines, m_sProfile.nFrameBytes);
+   m_sProfile.nFrameRead = m_sProfile.nFramestride * m_sProfile.nFrameScanlines * 3/2;
+#endif
    if (m_eMode == MODE_DISPLAY ||
        m_eMode == MODE_PREVIEW)
    {
@@ -1880,7 +1907,6 @@ void parseArgs(int argc, char** argv)
       }
    }
 }
-
 
 void* Watchdog(void* data)
 {
@@ -1992,8 +2018,6 @@ int main(int argc, char** argv)
       result = OMX_GetParameter(m_hHandle, OMX_IndexParamPortDefinition, &portDef);
       CHK(result);
 
-      D("allocating output buffers");
-
       D("allocating Input buffers");
       num_in_buffers = portDef.nBufferCountActual;
       for (i = 0; i < portDef.nBufferCountActual; i++)
@@ -2058,7 +2082,6 @@ int main(int argc, char** argv)
 
    D("going to executing state");
    SetState(OMX_StateExecuting);
-
    for (i = 0; i < num_out_buffers; i++)
    {
       D("filling buffer %d", i);
