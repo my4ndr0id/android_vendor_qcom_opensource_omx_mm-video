@@ -51,6 +51,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/time.h>
+#include <cutils/properties.h>
 
 /* =======================================================================
 
@@ -959,17 +960,22 @@ void h264_stream_parser::sei_picture_timing()
 
 void h264_stream_parser::sei_pan_scan()
 {
+  char property_value[PROPERTY_VALUE_MAX] = {0};
+  OMX_S32 enable_panscan_log = 0;
+  property_get("vidc.dec.debug.panframedata", property_value, "0");
+  enable_panscan_log = atoi(property_value);
 #ifdef PANSCAN_HDLR
   h264_pan_scan *pan_scan_param = panscan_hdl->get_free();
 #else
   h264_pan_scan *pan_scan_param = &panscan_param;
 #endif
-  DEBUG_PRINT_LOW("@@sei_pan_scan: IN");
+
   if (!pan_scan_param)
   {
     DEBUG_PRINT_ERROR("sei_pan_scan: ERROR: Invalid pointer!");
     return;
   }
+
   pan_scan_param->rect_id = uev();
   if (pan_scan_param->rect_id > 0xFF)
   {
@@ -977,9 +983,9 @@ void h264_stream_parser::sei_pan_scan()
     pan_scan_param->rect_id = NO_PAN_SCAN_BIT;
     return;
   }
-  DEBUG_PRINT_LOW("-->rect_id            : %u", pan_scan_param->rect_id);
+
   pan_scan_param->rect_cancel_flag = extract_bits(1);
-  DEBUG_PRINT_LOW("-->rect_cancel_flag   : %u", pan_scan_param->rect_cancel_flag);
+
   if (pan_scan_param->rect_cancel_flag)
     pan_scan_param->rect_id = NO_PAN_SCAN_BIT;
   else
@@ -991,27 +997,47 @@ void h264_stream_parser::sei_pan_scan()
       pan_scan_param->rect_id = NO_PAN_SCAN_BIT;
       return;
     }
-    DEBUG_PRINT_LOW("-->cnt                : %u", pan_scan_param->cnt);
+
     for (int i = 0; i < pan_scan_param->cnt; i++)
     {
       pan_scan_param->rect_left_offset[i] = sev();
       pan_scan_param->rect_right_offset[i] = sev();
       pan_scan_param->rect_top_offset[i] = sev();
       pan_scan_param->rect_bottom_offset[i] = sev();
-      DEBUG_PRINT_LOW("-->rect_left_offset   : %d", pan_scan_param->rect_left_offset[i]);
-      DEBUG_PRINT_LOW("-->rect_right_offset  : %d", pan_scan_param->rect_right_offset[i]);
-      DEBUG_PRINT_LOW("-->rect_top_offset    : %d", pan_scan_param->rect_top_offset[i]);
-      DEBUG_PRINT_LOW("-->rect_bottom_offset : %d", pan_scan_param->rect_bottom_offset[i]);
+
     }
     pan_scan_param->rect_repetition_period = uev();
-    DEBUG_PRINT_LOW("-->repetition_period  : %u", pan_scan_param->rect_repetition_period);
 #ifdef PANSCAN_HDLR
     if (pan_scan_param->rect_repetition_period > 1)
       // Repetition period is decreased by 2 each time panscan data is used
       pan_scan_param->rect_repetition_period *= 2;
 #endif
+     if (enable_panscan_log)
+     {
+       print_pan_data(pan_scan_param);
+     }
   }
-  DEBUG_PRINT_LOW("@@sei_pan_scan: OUT");
+}
+
+void h264_stream_parser::print_pan_data(h264_pan_scan *pan_scan_param)
+{
+  DEBUG_PRINT_HIGH("@@print_pan_data: IN");
+
+  DEBUG_PRINT_HIGH("-->rect_id            : %u", pan_scan_param->rect_id);
+  DEBUG_PRINT_HIGH("-->rect_cancel_flag   : %u", pan_scan_param->rect_cancel_flag);
+
+  DEBUG_PRINT_HIGH("-->cnt                : %u", pan_scan_param->cnt);
+
+  for (int i = 0; i < pan_scan_param->cnt; i++)
+  {
+    DEBUG_PRINT_HIGH("-->rect_left_offset   : %d", pan_scan_param->rect_left_offset[i]);
+    DEBUG_PRINT_HIGH("-->rect_right_offset  : %d", pan_scan_param->rect_right_offset[i]);
+    DEBUG_PRINT_HIGH("-->rect_top_offset    : %d", pan_scan_param->rect_top_offset[i]);
+    DEBUG_PRINT_HIGH("-->rect_bottom_offset : %d", pan_scan_param->rect_bottom_offset[i]);
+  }
+  DEBUG_PRINT_HIGH("-->repetition_period  : %u", pan_scan_param->rect_repetition_period);
+
+  DEBUG_PRINT_HIGH("@@print_pan_data: OUT");
 }
 
 void h264_stream_parser::parse_sps()
@@ -1239,8 +1265,16 @@ OMX_S64 h264_stream_parser::calculate_fixed_fps_ts(OMX_S64 timestamp, OMX_U32 De
 
 void h264_stream_parser::parse_frame_pack()
 {
+  char property_value[PROPERTY_VALUE_MAX] = {0};
+  OMX_S32 enable_framepack_log = 0;
+
+  property_get("vidc.dec.debug.panframedata", property_value, "0");
+  enable_framepack_log = atoi(property_value);
+
   DEBUG_PRINT_LOW("\n%s:%d parse_frame_pack", __func__, __LINE__);
+
   frame_packing_arrangement.id = uev();
+
   frame_packing_arrangement.cancel_flag = extract_bits(1);
   if(!frame_packing_arrangement.cancel_flag) {
      frame_packing_arrangement.type = extract_bits(7);
@@ -1265,8 +1299,45 @@ void h264_stream_parser::parse_frame_pack()
    }
    frame_packing_arrangement.extension_flag = extract_bits(1);
 
+   if (enable_framepack_log)
+   {
+     print_frame_pack();
+   }
 }
 
+void h264_stream_parser::print_frame_pack()
+{
+  DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.id = %u", frame_packing_arrangement.id);
+  DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.cancel_flag = %u",
+                       frame_packing_arrangement.cancel_flag);
+  if(!frame_packing_arrangement.cancel_flag)
+  {
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.type = %u",
+                         frame_packing_arrangement.type);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.quincunx_sampling_flag = %u",
+                         frame_packing_arrangement.quincunx_sampling_flag);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.content_interpretation_type = %u",
+                         frame_packing_arrangement.content_interpretation_type);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.spatial_flipping_flag = %u",
+                         frame_packing_arrangement.spatial_flipping_flag);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.frame0_flipped_flag = %u",
+                         frame_packing_arrangement.frame0_flipped_flag);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.field_views_flag = %u",
+                         frame_packing_arrangement.field_views_flag);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.current_frame_is_frame0_flag = %u",
+                         frame_packing_arrangement.current_frame_is_frame0_flag);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.frame0_self_contained_flag = %u",
+                         frame_packing_arrangement.frame0_self_contained_flag);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.frame1_self_contained_flag = %u",
+                         frame_packing_arrangement.frame1_self_contained_flag);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.reserved_byte = %u",
+                         frame_packing_arrangement.reserved_byte);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.repetition_period = %u",
+                         frame_packing_arrangement.repetition_period);
+    DEBUG_PRINT_HIGH("\n ## frame_packing_arrangement.extension_flag = %u",
+                         frame_packing_arrangement.extension_flag);
+  }
+}
 /* API'S EXPOSED TO OMX COMPONENT */
 
 void h264_stream_parser::get_frame_pack_data(

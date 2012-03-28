@@ -77,6 +77,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EGL_BUFFER_HANDLE_QCOM 0x4F00
 #define EGL_BUFFER_OFFSET_QCOM 0x4F01
 #endif
+
 #ifdef INPUT_BUFFER_LOG
 #define INPUT_BUFFER_FILE_NAME "/data/input-bitstream.\0\0\0\0"
 #define INPUT_BUFFER_FILE_NAME_LEN 30
@@ -4711,6 +4712,11 @@ OMX_ERRORTYPE  omx_vdec::allocate_output_buffer(
   unsigned                         i= 0; // Temporary counter
   struct vdec_ioctl_msg ioctl_msg = {NULL,NULL};
   struct vdec_setbuffer_cmd setbuffers;
+#ifdef USE_ION
+  int ion_device_fd =-1;
+  struct ion_allocation_data ion_alloc_data;
+  struct ion_fd_data fd_ion_data;
+#endif
 
   int nBufHdrSize        = 0;
   int nPlatformEntrySize = 0;
@@ -4873,13 +4879,13 @@ OMX_ERRORTYPE  omx_vdec::allocate_output_buffer(
         drv_ctx.ptr_respbuffer = NULL;
       }
 #ifdef USE_ION
-      if (drv_ctx.op_buf_ion_info) {
+    if (drv_ctx.op_buf_ion_info) {
         DEBUG_PRINT_LOW("\n Free o/p ion context");
 	free(drv_ctx.op_buf_ion_info);
         drv_ctx.op_buf_ion_info = NULL;
-      }
+    }
 #endif
-      return OMX_ErrorInsufficientResources;
+      eRet =  OMX_ErrorInsufficientResources;
     }
   }
 
@@ -4966,10 +4972,10 @@ OMX_ERRORTYPE  omx_vdec::allocate_output_buffer(
 #ifdef _ANDROID_
 #ifdef USE_ION
     m_heap_ptr[i].video_heap_ptr = new VideoHeap (pmem_fd,
-                               drv_ctx.op_buf.buffer_size,
-                               pmem_baseaddress,
-                               drv_ctx.op_buf_ion_info[i].ion_alloc_data.handle,
-                               pmem_fd);
+                                drv_ctx.op_buf.buffer_size,
+                                pmem_baseaddress,
+                                ion_alloc_data.handle,
+                                pmem_fd);
     m_heap_count = m_heap_count + 1;
 #else
     m_heap_ptr[i].video_heap_ptr = new VideoHeap (pmem_fd,
@@ -6365,6 +6371,28 @@ OMX_ERRORTYPE omx_vdec::fill_buffer_done(OMX_HANDLETYPE hComp,
     buffer->nFlags &= ~OMX_BUFFERFLAG_DATACORRUPT;
   }
 
+  char value[PROPERTY_VALUE_MAX];
+  property_get("vidc.dec.debug.panframedata", value, NULL);
+
+  if (atoi(value))
+  {
+    if (QOMX_VIDEO_BUFFERFLAG_EOSEQ)
+    {
+      DEBUG_PRINT_HIGH("\n");
+      DEBUG_PRINT_HIGH("***************************************************\n");
+      DEBUG_PRINT_HIGH("FillBufferDone: End Of Sequence Received\n");
+      DEBUG_PRINT_HIGH("***************************************************\n");
+    }
+
+    if (OMX_BUFFERFLAG_DATACORRUPT)
+    {
+      DEBUG_PRINT_HIGH("\n");
+      DEBUG_PRINT_HIGH("***************************************************\n");
+      DEBUG_PRINT_HIGH("FillBufferDone: OMX_BUFFERFLAG_DATACORRUPT Received\n");
+      DEBUG_PRINT_HIGH("***************************************************\n");
+    }
+  }
+
   DEBUG_PRINT_LOW("\n fill_buffer_done: bufhdr = %p, bufhdr->pBuffer = %p",
       buffer, buffer->pBuffer);
   pending_output_buffers --;
@@ -7683,8 +7711,8 @@ OMX_ERRORTYPE omx_vdec::update_portdef(OMX_PARAM_PORTDEFINITIONTYPE *portDefn)
   portDefn->format.video.nStride = drv_ctx.video_resolution.stride;
   portDefn->format.video.nSliceHeight = drv_ctx.video_resolution.scan_lines;
   DEBUG_PRINT_LOW("update_portdef Width = %d Height = %d Stride = %u"
-    "SliceHeight = %u \n", portDefn->format.video.nFrameWidth,
-    portDefn->format.video.nFrameHeight,
+    "SliceHeight = %u \n", portDefn->format.video.nFrameHeight,
+    portDefn->format.video.nFrameWidth,
     portDefn->format.video.nStride,
     portDefn->format.video.nSliceHeight);
   return eRet;

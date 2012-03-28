@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------------
-Copyright (c) 2010-2011, Code Aurora Forum. All rights reserved.
+Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -446,6 +446,9 @@ class h264_stream_parser
     void sei_picture_timing();
     void sei_pan_scan();
     void scaling_list(OMX_U32 size_of_scaling_list);
+
+    void print_pan_data(h264_pan_scan *pan_scan_param);
+    void print_frame_pack();
 
     OMX_U32 get_nal_unit_type(OMX_U32 *nal_unit_type);
     OMX_S64 calculate_buf_period_ts(OMX_S64 timestamp);
