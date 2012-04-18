@@ -6377,7 +6377,7 @@ OMX_ERRORTYPE omx_vdec::fill_buffer_done(OMX_HANDLETYPE hComp,
 
   if (atoi(value))
   {
-    if (QOMX_VIDEO_BUFFERFLAG_EOSEQ)
+    if (buffer->nFlags & QOMX_VIDEO_BUFFERFLAG_EOSEQ)
     {
       DEBUG_PRINT_HIGH("\n");
       DEBUG_PRINT_HIGH("***************************************************\n");
@@ -6385,7 +6385,7 @@ OMX_ERRORTYPE omx_vdec::fill_buffer_done(OMX_HANDLETYPE hComp,
       DEBUG_PRINT_HIGH("***************************************************\n");
     }
 
-    if (OMX_BUFFERFLAG_DATACORRUPT)
+    if (buffer->nFlags & OMX_BUFFERFLAG_DATACORRUPT)
     {
       DEBUG_PRINT_HIGH("\n");
       DEBUG_PRINT_HIGH("***************************************************\n");
