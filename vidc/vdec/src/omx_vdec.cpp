@@ -6371,6 +6371,7 @@ OMX_ERRORTYPE omx_vdec::fill_buffer_done(OMX_HANDLETYPE hComp,
     buffer->nFlags &= ~OMX_BUFFERFLAG_DATACORRUPT;
   }
 
+#ifdef _ANDROID_
   char value[PROPERTY_VALUE_MAX];
   property_get("vidc.dec.debug.panframedata", value, NULL);
 
@@ -6392,6 +6393,7 @@ OMX_ERRORTYPE omx_vdec::fill_buffer_done(OMX_HANDLETYPE hComp,
       DEBUG_PRINT_HIGH("***************************************************\n");
     }
   }
+#endif
 
   DEBUG_PRINT_LOW("\n fill_buffer_done: bufhdr = %p, bufhdr->pBuffer = %p",
       buffer, buffer->pBuffer);

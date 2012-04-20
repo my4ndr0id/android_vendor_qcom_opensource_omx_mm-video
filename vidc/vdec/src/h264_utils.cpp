@@ -51,7 +51,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/time.h>
+#ifdef _ANDROID_
 #include <cutils/properties.h>
+#endif
 
 /* =======================================================================
 
@@ -960,10 +962,12 @@ void h264_stream_parser::sei_picture_timing()
 
 void h264_stream_parser::sei_pan_scan()
 {
+#ifdef _ANDROID_
   char property_value[PROPERTY_VALUE_MAX] = {0};
   OMX_S32 enable_panscan_log = 0;
   property_get("vidc.dec.debug.panframedata", property_value, "0");
   enable_panscan_log = atoi(property_value);
+#endif
 #ifdef PANSCAN_HDLR
   h264_pan_scan *pan_scan_param = panscan_hdl->get_free();
 #else
@@ -1012,10 +1016,12 @@ void h264_stream_parser::sei_pan_scan()
       // Repetition period is decreased by 2 each time panscan data is used
       pan_scan_param->rect_repetition_period *= 2;
 #endif
+#ifdef _ANDROID_
      if (enable_panscan_log)
      {
        print_pan_data(pan_scan_param);
      }
+#endif
   }
 }
 
@@ -1265,12 +1271,13 @@ OMX_S64 h264_stream_parser::calculate_fixed_fps_ts(OMX_S64 timestamp, OMX_U32 De
 
 void h264_stream_parser::parse_frame_pack()
 {
+#ifdef _ANDROID_
   char property_value[PROPERTY_VALUE_MAX] = {0};
   OMX_S32 enable_framepack_log = 0;
 
   property_get("vidc.dec.debug.panframedata", property_value, "0");
   enable_framepack_log = atoi(property_value);
-
+#endif
   DEBUG_PRINT_LOW("\n%s:%d parse_frame_pack", __func__, __LINE__);
 
   frame_packing_arrangement.id = uev();
@@ -1299,10 +1306,12 @@ void h264_stream_parser::parse_frame_pack()
    }
    frame_packing_arrangement.extension_flag = extract_bits(1);
 
+#ifdef _ANDROID_
    if (enable_framepack_log)
    {
      print_frame_pack();
    }
+#endif
 }
 
 void h264_stream_parser::print_frame_pack()
