@@ -3343,7 +3343,7 @@ void overlay_set()
     }
 #endif
 #ifdef MAX_RES_1080P
-    overlayp->src.format = MDP_Y_CRCB_H2V2_TILE;
+    overlayp->src.format = MDP_Y_CBCR_H2V2_TILE;
 #endif
     overlayp->src_rect.x = 0;
     overlayp->src_rect.y = 0;
