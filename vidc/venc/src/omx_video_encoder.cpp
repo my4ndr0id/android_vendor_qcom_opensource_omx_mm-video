@@ -1045,6 +1045,29 @@ OMX_ERRORTYPE  omx_venc::set_parameter(OMX_IN OMX_HANDLETYPE     hComp,
       }
       break;
     }
+#ifdef MAX_RES_1080P
+  case OMX_QcomIndexEnableSliceDeliveryMode:
+    {
+      QOMX_EXTNINDEX_PARAMTYPE* pParam =
+         (QOMX_EXTNINDEX_PARAMTYPE*)paramData;
+      if(pParam->nPortIndex == PORT_INDEX_OUT)
+      {
+        if(!handle->venc_set_param(paramData,
+              (OMX_INDEXTYPE)OMX_QcomIndexEnableSliceDeliveryMode))
+        {
+          DEBUG_PRINT_ERROR("ERROR: Request for setting slice delivery mode failed");
+          return OMX_ErrorUnsupportedSetting;
+        }
+      }
+      else
+      {
+        DEBUG_PRINT_ERROR("ERROR: OMX_QcomIndexEnableSliceDeliveryMode "
+           "called on wrong port(%d)", pParam->nPortIndex);
+        return OMX_ErrorBadPortIndex;
+      }
+      break;
+    }
+#endif
   case OMX_IndexParamVideoSliceFMO:
   default:
     {

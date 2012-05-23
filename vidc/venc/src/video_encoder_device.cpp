@@ -993,6 +993,26 @@ bool venc_dev::venc_set_param(void *paramData,OMX_INDEXTYPE index )
       }
       break;
     }
+  case OMX_QcomIndexEnableSliceDeliveryMode:
+    {
+       QOMX_EXTNINDEX_PARAMTYPE* pParam =
+          (QOMX_EXTNINDEX_PARAMTYPE*)paramData;
+       if(pParam->nPortIndex == PORT_INDEX_OUT)
+       {
+         if(venc_set_slice_delivery_mode(pParam->bEnable) == false)
+         {
+           DEBUG_PRINT_ERROR("Setting slice delivery mode failed");
+           return OMX_ErrorUnsupportedSetting;
+         }
+       }
+       else
+       {
+         DEBUG_PRINT_ERROR("OMX_QcomIndexEnableSliceDeliveryMode "
+            "called on wrong port(%d)", pParam->nPortIndex);
+         return OMX_ErrorBadPortIndex;
+       }
+       break;
+    }
   case OMX_IndexParamVideoSliceFMO:
   default:
 	  DEBUG_PRINT_ERROR("\nERROR: Unsupported parameter in venc_set_param: %u",
@@ -1416,6 +1436,7 @@ unsigned venc_dev::venc_flush( unsigned port)
 
   if(port == PORT_INDEX_IN)
   {
+    DEBUG_PRINT_HIGH("Calling Input Flush");
     buffer_index.flush_mode = VEN_FLUSH_INPUT;
     ioctl_msg.in = (void*)&buffer_index;
     ioctl_msg.out = NULL;
@@ -1424,6 +1445,7 @@ unsigned venc_dev::venc_flush( unsigned port)
   }
   else if(port == PORT_INDEX_OUT)
   {
+    DEBUG_PRINT_HIGH("Calling Output Flush");
     buffer_index.flush_mode = VEN_FLUSH_OUTPUT;
     ioctl_msg.in = (void*)&buffer_index;
     ioctl_msg.out = NULL;
@@ -1689,6 +1711,26 @@ bool venc_dev::venc_fill_buf(void *buffer, void *pmem_data_buf,unsigned,unsigned
     return false;
   }
 
+  return true;
+}
+
+bool venc_dev::venc_set_slice_delivery_mode(OMX_BOOL enable)
+{
+  venc_ioctl_msg ioctl_msg = {NULL,NULL};
+  DEBUG_PRINT_HIGH("Set slice_delivery_mode: %d", enable);
+  if(multislice.mslice_mode == VEN_MSLICE_CNT_MB)
+  {
+    if(ioctl(m_nDriver_fd, VEN_IOCTL_SET_SLICE_DELIVERY_MODE) < 0)
+    {
+      DEBUG_PRINT_ERROR("Request for setting slice delivery mode failed");
+      return false;
+    }
+  }
+  else
+  {
+    DEBUG_PRINT_ERROR("WARNING: slice_mode[%d] is not VEN_MSLICE_CNT_MB to set "
+       "slice delivery mode to the driver.", multislice.mslice_mode);
+  }
   return true;
 }
 
@@ -2294,7 +2336,7 @@ bool venc_dev::venc_set_target_bitrate(OMX_U32 nTargetBitrate, OMX_U32 config)
     m_level_set = false;
     if(venc_set_profile_level(0, 0))
     {
-      DEBUG_PRINT_HIGH("Calling set level (Bitrate) with %d\n",profile_level.level);
+      DEBUG_PRINT_LOW("Calling set level (Bitrate) with %d\n",profile_level.level);
     }
   }
   return true;
@@ -2326,7 +2368,7 @@ bool venc_dev::venc_set_encode_framerate(OMX_U32 encode_framerate, OMX_U32 confi
     m_level_set = false;
     if(venc_set_profile_level(0, 0))
     {
-      DEBUG_PRINT_HIGH("Calling set level (Framerate) with %d\n",profile_level.level);
+      DEBUG_PRINT_LOW("Calling set level (Framerate) with %d\n",profile_level.level);
     }
   }
   return true;
@@ -2795,7 +2837,7 @@ bool venc_dev::venc_validate_profile_level(OMX_U32 *eProfile, OMX_U32 *eLevel)
   {
     *eLevel = new_level;
   }
-  DEBUG_PRINT_HIGH("%s: Returning with eProfile = %lu"
+  DEBUG_PRINT_LOW("%s: Returning with eProfile = %lu"
       "Level = %lu", __func__, *eProfile, *eLevel);
 
   return true;
@@ -2881,7 +2923,7 @@ bool venc_dev::venc_set_meta_mode(bool mode)
 {
   venc_ioctl_msg ioctl_msg = {NULL,NULL};
   ioctl_msg.in = &mode;
-
+  DEBUG_PRINT_HIGH("Set meta buffer mode: %d", mode);
   if(ioctl(m_nDriver_fd,VEN_IOCTL_SET_METABUFFER_MODE,&ioctl_msg) < 0)
   {
     DEBUG_PRINT_ERROR(" Set meta buffer mode failed");

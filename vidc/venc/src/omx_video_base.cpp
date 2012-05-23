@@ -1484,8 +1484,9 @@ OMX_ERRORTYPE  omx_video::get_parameter(OMX_IN OMX_HANDLETYPE     hComp,
       DEBUG_PRINT_LOW("get_parameter: OMX_IndexParamPortDefinition\n");
       if(portDefn->nPortIndex == (OMX_U32) PORT_INDEX_IN)
       {
-        DEBUG_PRINT_LOW("\n i/p actual cnt = %d\n", m_sInPortDef.nBufferCountActual);
-        DEBUG_PRINT_LOW("\n i/p min cnt = %d\n", m_sInPortDef.nBufferCountMin);
+        DEBUG_PRINT_LOW("m_sInPortDef: size = %d, min cnt = %d, actual cnt = %d",
+            m_sInPortDef.nBufferSize, m_sInPortDef.nBufferCountMin,
+            m_sInPortDef.nBufferCountActual);
         memcpy(portDefn, &m_sInPortDef, sizeof(m_sInPortDef));
 #ifdef _ANDROID_ICS_
         if(meta_mode_enable)
@@ -1500,8 +1501,13 @@ OMX_ERRORTYPE  omx_video::get_parameter(OMX_IN OMX_HANDLETYPE     hComp,
       }
       else if(portDefn->nPortIndex == (OMX_U32) PORT_INDEX_OUT)
       {
-        DEBUG_PRINT_LOW("\n o/p actual cnt = %d\n", m_sOutPortDef.nBufferCountActual);
-        DEBUG_PRINT_LOW("\n o/p min cnt = %d\n", m_sOutPortDef.nBufferCountMin);
+        dev_get_buf_req (&m_sOutPortDef.nBufferCountMin,
+                         &m_sOutPortDef.nBufferCountActual,
+                         &m_sOutPortDef.nBufferSize,
+                         m_sOutPortDef.nPortIndex);
+        DEBUG_PRINT_LOW("m_sOutPortDef: size = %d, min cnt = %d, actual cnt = %d",
+            m_sOutPortDef.nBufferSize, m_sOutPortDef.nBufferCountMin,
+            m_sOutPortDef.nBufferCountActual);
         memcpy(portDefn, &m_sOutPortDef, sizeof(m_sOutPortDef));
       }
       else
@@ -1909,6 +1915,13 @@ OMX_ERRORTYPE  omx_video::get_extension_index(OMX_IN OMX_HANDLETYPE      hComp,
     DEBUG_PRINT_ERROR("ERROR: Get Extension Index in Invalid State\n");
     return OMX_ErrorInvalidState;
   }
+#ifdef MAX_RES_1080P
+  if (!strncmp(paramName, "OMX.QCOM.index.param.SliceDeliveryMode",
+      sizeof("OMX.QCOM.index.param.SliceDeliveryMode") - 1)) {
+    *indexType = (OMX_INDEXTYPE)OMX_QcomIndexEnableSliceDeliveryMode;
+    return OMX_ErrorNone;
+  }
+#endif
 #ifdef _ANDROID_ICS_
   if (!strncmp(paramName, "OMX.google.android.index.storeMetaDataInBuffers",sizeof("OMX.google.android.index.storeMetaDataInBuffers") - 1)) {
         *indexType = (OMX_INDEXTYPE)OMX_QcomIndexParamVideoEncodeMetaBufferMode;
@@ -2603,6 +2616,8 @@ OMX_ERRORTYPE  omx_video::allocate_input_buffer(
 
   if(!m_inp_mem_ptr)
   {
+    DEBUG_PRINT_HIGH("%s: size = %d, actual cnt %d", __FUNCTION__,
+        m_sInPortDef.nBufferSize, m_sInPortDef.nBufferCountActual);
     m_inp_mem_ptr = (OMX_BUFFERHEADERTYPE*) \
                     calloc( (sizeof(OMX_BUFFERHEADERTYPE)), m_sInPortDef.nBufferCountActual);
     if(m_inp_mem_ptr == NULL)
@@ -2743,7 +2758,8 @@ OMX_ERRORTYPE  omx_video::allocate_output_buffer(
   if(!m_out_mem_ptr)
   {
     int nBufHdrSize        = 0;
-    DEBUG_PRINT_LOW("Allocating First Output Buffer(%d)\n",m_sOutPortDef.nBufferCountActual);
+    DEBUG_PRINT_HIGH("%s: size = %d, actual cnt %d", __FUNCTION__,
+        m_sOutPortDef.nBufferSize, m_sOutPortDef.nBufferCountActual);
     nBufHdrSize        = m_sOutPortDef.nBufferCountActual * sizeof(OMX_BUFFERHEADERTYPE);
 
     /*
@@ -3868,7 +3884,8 @@ bool omx_video::release_input_done(void)
 OMX_ERRORTYPE omx_video::fill_buffer_done(OMX_HANDLETYPE hComp,
                                           OMX_BUFFERHEADERTYPE * buffer)
 {
-  DEBUG_PRINT_LOW("\nfill_buffer_done: buffer->pBuffer[%p]\n", buffer->pBuffer);
+  DEBUG_PRINT_LOW("fill_buffer_done: buffer->pBuffer[%p], flags=0x%x",
+     buffer->pBuffer, buffer->nFlags);
   if(buffer == NULL || ((buffer - m_out_mem_ptr) > m_sOutPortDef.nBufferCountActual))
   {
     return OMX_ErrorBadParameter;
@@ -3910,7 +3927,7 @@ OMX_ERRORTYPE omx_video::fill_buffer_done(OMX_HANDLETYPE hComp,
 OMX_ERRORTYPE omx_video::empty_buffer_done(OMX_HANDLETYPE         hComp,
                                            OMX_BUFFERHEADERTYPE* buffer)
 {
-  DEBUG_PRINT_LOW("\nempty_buffer_done: buffer->pBuffer[%p]\n", buffer->pBuffer);
+  DEBUG_PRINT_LOW("empty_buffer_done: buffer->pBuffer[%p]", buffer->pBuffer);
   if(buffer == NULL || ((buffer - m_inp_mem_ptr) > m_sInPortDef.nBufferCountActual))
   {
     return OMX_ErrorBadParameter;
