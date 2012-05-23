@@ -449,6 +449,15 @@ private:
         VC1_AP = 2
     };
 
+#ifdef _COPPER_
+    enum v4l2_ports
+    {
+        CAPTURE_PORT,
+        OUTPUT_PORT,
+        MAX_PORT
+    };
+#endif
+
     struct omx_event
     {
         unsigned param1;
@@ -804,6 +813,7 @@ private:
 #ifdef _COPPER_
     int capture_capability;
     int output_capability;
+    bool streaming[MAX_PORT];
 #endif
 };
 

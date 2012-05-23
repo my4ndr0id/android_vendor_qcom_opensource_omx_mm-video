@@ -513,6 +513,7 @@ omx_vdec::omx_vdec(): m_state(OMX_StateInvalid),
                     ,iDivXDrmDecrypt(NULL)
 #endif
                     ,m_desc_buffer_ptr(NULL)
+                    ,streaming({false, false})
 {
   /* Assumption is that , to begin with , we have all the frames with decoder */
   DEBUG_PRINT_HIGH("In OMX vdec Constructor");
@@ -1278,6 +1279,7 @@ OMX_ERRORTYPE omx_vdec::component_init(OMX_STRING role)
 		strlcpy((char *)m_cRole, "video_decoder.divx",OMX_MAX_STRINGNAME_SIZE);
 		DEBUG_PRINT_LOW ("\n DIVX 311 Decoder selected");
 		drv_ctx.decoder_format = VDEC_CODECTYPE_DIVX_3;
+		output_capability = V4L2_PIX_FMT_DIVX_311;
 		eCompressionFormat = (OMX_VIDEO_CODINGTYPE)QOMX_VIDEO_CodingDivx;
 		codec_type_parse = CODEC_TYPE_DIVX;
 		m_frame_parser.init_start_codes (codec_type_parse);
@@ -1801,15 +1803,19 @@ OMX_ERRORTYPE  omx_vdec::send_command_proxy(OMX_IN OMX_HANDLETYPE hComp,
 	 btype = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
 	 rc = ioctl(drv_ctx.video_driver_fd, VIDIOC_STREAMOFF, &btype);
 	 if (rc) {
-		/*TODO: How to handle this case */	
-		printf("\n Failed to call streamoff on OUTPUT Port \n");
-		}
+		 /*TODO: How to handle this case */
+		 printf("\n Failed to call streamoff on OUTPUT Port \n");
+	 } else {
+		 streaming[OUTPUT_PORT] = false;
+	 }
 	 btype = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	 rc = ioctl(drv_ctx.video_driver_fd, VIDIOC_STREAMOFF, &btype);
-	if (rc) {
-		/*TODO: How to handle this case */	
-		printf("\n Failed to call streamoff on CAPTURE Port \n");
-		}
+	 if (rc) {
+		 /*TODO: How to handle this case */
+		 printf("\n Failed to call streamoff on CAPTURE Port \n");
+	 } else {
+		 streaming[CAPTURE_PORT] = false;
+	 }
 		struct v4l2_event_subscription sub;
 		sub.type=V4L2_EVENT_ALL;
 		ret = ioctl(drv_ctx.video_driver_fd, VIDIOC_UNSUBSCRIBE_EVENT, &sub);
@@ -4783,14 +4789,16 @@ OMX_ERRORTYPE  omx_vdec::allocate_output_buffer(
        return OMX_ErrorInsufficientResources;
      }
 
-	  if (i == (drv_ctx.op_buf.actualcount -1 )) {
+	  if (i == (drv_ctx.op_buf.actualcount -1 ) && !streaming[CAPTURE_PORT]) {
 		enum v4l2_buf_type buf_type;
 		buf_type=V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 		rc=ioctl(drv_ctx.video_driver_fd, VIDIOC_STREAMON,&buf_type);
 		if (rc) {
 			return OMX_ErrorInsufficientResources;
-		} else
-			printf("\n STREAMON Successful \n ");
+		} else {
+			streaming[CAPTURE_PORT] = true;
+			DEBUG_PRINT_LOW("\n STREAMON Successful \n ");
+		}
 	  }
 
       (*bufferHdr)->pBuffer = (OMX_U8*)drv_ctx.ptr_outputbuffer[i].bufferaddr;
@@ -5388,7 +5396,7 @@ OMX_ERRORTYPE  omx_vdec::empty_this_buffer_proxy(OMX_IN OMX_HANDLETYPE         h
 	buf.m.planes = &plane;
 	buf.length = 1;
 	rc = ioctl(drv_ctx.video_driver_fd, VIDIOC_QBUF, &buf);
-  if(frame_count == 1)
+  if(!streaming[OUTPUT_PORT])
   {
 	enum v4l2_buf_type buf_type;
 	int ret,r;
@@ -5397,6 +5405,7 @@ OMX_ERRORTYPE  omx_vdec::empty_this_buffer_proxy(OMX_IN OMX_HANDLETYPE         h
 	ret=ioctl(drv_ctx.video_driver_fd, VIDIOC_STREAMON,&buf_type);
 	if(!ret) {
 		printf("Streamon on OUTPUT Plane was successful \n");
+		streaming[OUTPUT_PORT] = true;
 		ret = pthread_create(&async_thread_id,0,async_message_thread,this);
 		if(ret < 0)
 			printf("\n Failed to create async_message_thread \n");
@@ -7283,6 +7292,8 @@ void omx_vdec::stream_off()
 	if (rc) {
 		/*TODO: How to handle this case */
 		printf("\n Failed to call streamoff on OUTPUT Port \n");
+	} else {
+		streaming[CAPTURE_PORT] = false;
 	}
 }
 
