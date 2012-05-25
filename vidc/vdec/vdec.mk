@@ -39,12 +39,7 @@ all: libOmxVdec.so mm-vdec-omx-test mm-video-driver-test
 SRCS := $(VDEC_SRC)/src/frameparser.cpp
 SRCS += $(VDEC_SRC)/src/h264_utils.cpp
 SRCS += $(VDEC_SRC)/src/mp4_utils.cpp
-ifeq ($(call is-board-platform-in-list,copper),true)
-SRCS += $(VDEC_SRC)/src/omx_vdec_copper.cpp
-endif
-ifeq ($(call is-board-platform-in-list,msm8660 msm8960),true)
 SRCS += $(VDEC_SRC)/src/omx_vdec.cpp
-endif
 
 CPPFLAGS += -I$(VDEC_SRC)/inc
 CPPFLAGS += -I$(SYSROOTINC_DIR)/mm-core

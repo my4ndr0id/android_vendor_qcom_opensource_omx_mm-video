@@ -56,9 +56,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C"{
 #include<utils/Log.h>
 }
-#include <linux/videodev2.h>
-#include <poll.h>
-#define TIMEOUT 5000
 #ifdef MAX_RES_720P
 #define LOG_TAG "OMX-VDEC-720P"
 #elif MAX_RES_1080P
@@ -372,6 +369,7 @@ public:
                                 OMX_PTR              appData,
                                 void *               eglImage);
     void complete_pending_buffer_done_cbs();
+
     struct video_driver_context drv_ctx;
     int  m_pipe_in;
     int  m_pipe_out;
@@ -571,7 +569,6 @@ private:
     OMX_ERRORTYPE set_buffer_req(vdec_allocatorproperty *buffer_prop);
     OMX_ERRORTYPE start_port_reconfig();
     OMX_ERRORTYPE update_picture_resolution();
-	void stream_off();
     void adjust_timestamp(OMX_S64 &act_timestamp);
     void set_frame_rate(OMX_S64 act_timestamp);
     void handle_extradata(OMX_BUFFERHEADERTYPE *p_buf_hdr);
@@ -801,37 +798,6 @@ private:
     bool secure_mode;
     OMX_QCOM_EXTRADATA_FRAMEINFO *m_extradata;
     bool codec_config_flag;
-#ifdef _COPPER_
-    int capture_capability;
-    int output_capability;
-#endif
 };
-
-#ifdef _COPPER_
-enum instance_state {
-	MSM_VIDC_CORE_UNINIT_DONE = 0x0001,
-	MSM_VIDC_CORE_INIT,
-	MSM_VIDC_CORE_INIT_DONE,
-	MSM_VIDC_OPEN,
-	MSM_VIDC_OPEN_DONE,
-	MSM_VIDC_LOAD_RESOURCES,
-	MSM_VIDC_LOAD_RESOURCES_DONE,
-	MSM_VIDC_START,
-	MSM_VIDC_START_DONE,
-	MSM_VIDC_STOP,
-	MSM_VIDC_STOP_DONE,
-	MSM_VIDC_RELEASE_RESOURCES,
-	MSM_VIDC_RELEASE_RESOURCES_DONE,
-	MSM_VIDC_CLOSE,
-	MSM_VIDC_CLOSE_DONE,
-	MSM_VIDC_CORE_UNINIT,
-};
-
-enum vidc_resposes_id {
-	MSM_VIDC_DECODER_FLUSH_DONE = 0x11,
-	MSM_VIDC_DECODER_EVENT_CHANGE,
-};
-
-#endif // _COPPER_
 
 #endif // __OMX_VDEC_H__

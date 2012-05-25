@@ -1908,8 +1908,6 @@ int Play_Decoder()
         color_fmt = (OMX_COLOR_FORMATTYPE)
            QOMX_COLOR_FormatYUV420PackedSemiPlanar64x32Tile2m8ka;
     }
-#elif _COPPER_
-        color_fmt = OMX_COLOR_FormatYUV420SemiPlanar;
 #else
        color_fmt = (OMX_COLOR_FORMATTYPE)
            QOMX_COLOR_FormatYUV420PackedSemiPlanar64x32Tile2m8ka;

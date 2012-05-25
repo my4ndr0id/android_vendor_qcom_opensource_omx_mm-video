@@ -890,7 +890,6 @@ OMX_ERRORTYPE  omx_video::send_command_proxy(OMX_IN OMX_HANDLETYPE hComp,
           bFlag = 0;
         }
 
-	dev_start_done();
       }
       /* Requesting transition from Idle to Idle */
       else if(eState == OMX_StateIdle)
@@ -955,7 +954,6 @@ OMX_ERRORTYPE  omx_video::send_command_proxy(OMX_IN OMX_HANDLETYPE hComp,
         BITMASK_SET(&m_flags,OMX_COMPONENT_IDLE_PENDING);
         execute_omx_flush(OMX_ALL);
         bFlag = 0;
-	dev_stop_done();
       }
       /* Requesting transition from Executing to Paused */
       else if(eState == OMX_StatePause)
@@ -2120,7 +2118,7 @@ OMX_ERRORTYPE  omx_video::use_input_buffer(
 
     DEBUG_PRINT_LOW("\nuse_inp:: bufhdr = %p, pBuffer = %p, m_pInput_pmem[i].buffer = %p",
                 (*bufferHdr), (*bufferHdr)->pBuffer, m_pInput_pmem[i].buffer);
-    if( dev_use_buf(&m_pInput_pmem[i],PORT_INDEX_IN,i) != true)
+    if( dev_use_buf(&m_pInput_pmem[i],PORT_INDEX_IN) != true)
     {
       DEBUG_PRINT_ERROR("\nERROR: dev_use_buf() Failed for i/p buf");
       return OMX_ErrorInsufficientResources;
@@ -2319,7 +2317,7 @@ OMX_ERRORTYPE  omx_video::use_output_buffer(
 
       DEBUG_PRINT_LOW("\n use_out:: bufhdr = %p, pBuffer = %p, m_pOutput_pmem[i].buffer = %p",
                 (*bufferHdr), (*bufferHdr)->pBuffer, m_pOutput_pmem[i].buffer);
-      if(dev_use_buf(&m_pOutput_pmem[i],PORT_INDEX_OUT,i) != true)
+      if(dev_use_buf(&m_pOutput_pmem[i],PORT_INDEX_OUT) != true)
       {
         DEBUG_PRINT_ERROR("ERROR: dev_use_buf Failed for o/p buf");
         return OMX_ErrorInsufficientResources;
@@ -2697,7 +2695,7 @@ OMX_ERRORTYPE  omx_video::allocate_input_buffer(
 
     BITMASK_SET(&m_inp_bm_count,i);
     //here change the I/P param here from buf_adr to pmem
-    if( dev_use_buf(&m_pInput_pmem[i],PORT_INDEX_IN,i) != true)
+    if( dev_use_buf(&m_pInput_pmem[i],PORT_INDEX_IN) != true)
     {
       DEBUG_PRINT_ERROR("\nERROR: dev_use_buf FAILED for i/p buf\n");
       return OMX_ErrorInsufficientResources;
@@ -2854,7 +2852,7 @@ OMX_ERRORTYPE  omx_video::allocate_output_buffer(
 
       BITMASK_SET(&m_out_bm_count,i);
 
-      if(dev_use_buf(&m_pOutput_pmem[i],PORT_INDEX_OUT,i) != true)
+      if(dev_use_buf(&m_pOutput_pmem[i],PORT_INDEX_OUT) != true)
       {
         DEBUG_PRINT_ERROR("\nERROR: dev_use_buf FAILED for o/p buf");
         return OMX_ErrorInsufficientResources;
@@ -3318,7 +3316,7 @@ OMX_ERRORTYPE  omx_video::empty_this_buffer_proxy(OMX_IN OMX_HANDLETYPE         
       Input_pmem_info.offset = 0;
       Input_pmem_info.size = handle->size;
     }
-    if(dev_use_buf(&Input_pmem_info,PORT_INDEX_IN,0) != true) {
+    if(dev_use_buf(&Input_pmem_info,PORT_INDEX_IN) != true) {
       DEBUG_PRINT_ERROR("\nERROR: in dev_use_buf");
       post_event ((unsigned int)buffer,0,OMX_COMPONENT_GENERATE_EBD);
       return OMX_ErrorBadParameter;
@@ -3336,7 +3334,7 @@ OMX_ERRORTYPE  omx_video::empty_this_buffer_proxy(OMX_IN OMX_HANDLETYPE         
             buffer->nFilledLen);
     DEBUG_PRINT_LOW("memcpy() done in ETBProxy for i/p Heap UseBuf");
   }
-  if(dev_empty_buf(buffer, pmem_data_buf,nBufIndex,m_pInput_pmem[nBufIndex].fd) != true)
+  if(dev_empty_buf(buffer, pmem_data_buf) != true)
   {
     DEBUG_PRINT_ERROR("\nERROR: ETBProxy: dev_empty_buf failed");
 #ifdef _ANDROID_ICS_
@@ -3450,7 +3448,7 @@ OMX_ERRORTYPE  omx_video::fill_this_buffer_proxy(
     pmem_data_buf = (OMX_U8 *)m_pOutput_pmem[bufferAdd - m_out_mem_ptr].buffer;
   }
 
-  if(dev_fill_buf(bufferAdd, pmem_data_buf,(bufferAdd - m_out_mem_ptr),m_pOutput_pmem[bufferAdd - m_out_mem_ptr].fd) != true)
+  if(dev_fill_buf(bufferAdd, pmem_data_buf) != true)
   {
     DEBUG_PRINT_ERROR("\nERROR: dev_fill_buf() Failed");
     post_event ((unsigned int)bufferAdd,0,OMX_COMPONENT_GENERATE_FBD);

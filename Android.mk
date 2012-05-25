@@ -23,9 +23,3 @@ ifeq ($(call is-board-platform,msm8960),true)
     include $(OMX_VIDEO_PATH)/vidc/venc/Android.mk
     include $(OMX_VIDEO_PATH)/DivxDrmDecrypt/Android.mk
 endif
-
-ifeq ($(call is-board-platform,copper),true)
-    include $(OMX_VIDEO_PATH)/vidc/vdec/Android.mk
-    include $(OMX_VIDEO_PATH)/vidc/venc/Android.mk
-    include $(OMX_VIDEO_PATH)/DivxDrmDecrypt/Android.mk
-endif

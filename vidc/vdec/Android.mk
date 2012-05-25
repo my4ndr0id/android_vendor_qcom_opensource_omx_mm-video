@@ -37,12 +37,6 @@ libOmxVdec-def += -DMAX_RES_1080P
 libOmxVdec-def += -DMAX_RES_1080P_EBI
 libOmxVdec-def += -DPROCESS_EXTRADATA_IN_OUTPUT_PORT
 endif
-ifeq ($(call is-board-platform,copper),true)
-libOmxVdec-def += -DMAX_RES_1080P
-libOmxVdec-def += -DMAX_RES_1080P_EBI
-libOmxVdec-def += -DPROCESS_EXTRADATA_IN_OUTPUT_PORT
-libOmxVdec-def += -D_COPPER_
-endif
 
 ifeq ($(call is-android-codename,HONEYCOMB),true)
 libOmxVdec-def += -D_ANDROID_HONEYCOMB_
@@ -97,12 +91,8 @@ LOCAL_SRC_FILES         += src/h264_utils.cpp
 LOCAL_SRC_FILES         += src/ts_parser.cpp
 ifeq ($(call is-board-platform-in-list,msm8660 msm8960),true)
 LOCAL_SRC_FILES         += src/mp4_utils.cpp
+endif
 LOCAL_SRC_FILES         += src/omx_vdec.cpp
-endif
-ifeq ($(call is-board-platform-in-list,copper),true)
-LOCAL_SRC_FILES         += src/mp4_utils.cpp
-LOCAL_SRC_FILES         += src/omx_vdec_copper.cpp
-endif
 LOCAL_SRC_FILES         += ../common/src/extra_data_handler.cpp
 include $(BUILD_SHARED_LIBRARY)
 

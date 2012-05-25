@@ -142,7 +142,7 @@ FILE *outputBufferFile1;
 char outputfilename [] = "/data/output-bitstream.\0\0\0\0";
 #endif
 //constructor
-venc_dev::venc_dev(class omx_venc *venc_class)
+venc_dev::venc_dev()
 {
   m_max_allowed_bitrate_check = false;
   m_eLevel = 0;
@@ -1134,16 +1134,6 @@ unsigned venc_dev::venc_resume(void)
   return ioctl(m_nDriver_fd,VEN_IOCTL_CMD_RESUME,NULL) ;
 }
 
-unsigned venc_dev::venc_start_done(void)
-{
-  return 0;
-}
-
-unsigned venc_dev::venc_stop_done(void)
-{
-  return 0;
-}
-
 unsigned venc_dev::venc_start(void)
 {
   DEBUG_PRINT_HIGH("\n %s(): Check Profile/Level set in driver before start",
@@ -1438,7 +1428,7 @@ unsigned venc_dev::venc_flush( unsigned port)
 //allocating I/P memory from pmem and register with the device
 
 
-bool venc_dev::venc_use_buf(void *buf_addr, unsigned port,unsigned)
+bool venc_dev::venc_use_buf(void *buf_addr, unsigned port)
 {
   struct venc_ioctl_msg ioctl_msg = {NULL,NULL};
   struct pmem *pmem_tmp;
@@ -1564,7 +1554,7 @@ bool venc_dev::venc_free_buf(void *buf_addr, unsigned port)
   return true;
 }
 
-bool venc_dev::venc_empty_buf(void *buffer, void *pmem_data_buf,unsigned,unsigned)
+bool venc_dev::venc_empty_buf(void *buffer, void *pmem_data_buf)
 {
   struct venc_buffer frameinfo;
   struct pmem *temp_buffer;
@@ -1650,7 +1640,7 @@ bool venc_dev::venc_empty_buf(void *buffer, void *pmem_data_buf,unsigned,unsigne
 #endif
   return true;
 }
-bool venc_dev::venc_fill_buf(void *buffer, void *pmem_data_buf,unsigned,unsigned)
+bool venc_dev::venc_fill_buf(void *buffer, void *pmem_data_buf)
 {
   struct venc_ioctl_msg ioctl_msg = {NULL,NULL};
   struct pmem *temp_buffer = NULL;

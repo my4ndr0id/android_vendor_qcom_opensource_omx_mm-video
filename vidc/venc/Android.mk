@@ -31,11 +31,6 @@ ifeq ($(call is-board-platform,msm8960),true)
 libmm-venc-def += -DMAX_RES_1080P
 libmm-venc-def += -DMAX_RES_1080P_EBI
 endif
-ifeq ($(call is-board-platform,copper),true)
-libmm-venc-def += -DMAX_RES_1080P
-libmm-venc-def += -DMAX_RES_1080P_EBI
-libmm-venc-def += -DBADGER
-endif
 ifeq ($(TARGET_USES_ION),true)
 libmm-venc-def += -DUSE_ION
 endif
@@ -68,13 +63,7 @@ LOCAL_SHARED_LIBRARIES    := liblog libutils libbinder libcutils
 
 LOCAL_SRC_FILES   := src/omx_video_base.cpp
 LOCAL_SRC_FILES   += src/omx_video_encoder.cpp
-ifeq ($(call is-board-platform-in-list,copper),true)
-LOCAL_SRC_FILES   += src/video_encoder_device_copper.cpp
-else
 LOCAL_SRC_FILES   += src/video_encoder_device.cpp
-endif
-
-
 LOCAL_SRC_FILES   += ../common/src/extra_data_handler.cpp
 
 include $(BUILD_SHARED_LIBRARY)

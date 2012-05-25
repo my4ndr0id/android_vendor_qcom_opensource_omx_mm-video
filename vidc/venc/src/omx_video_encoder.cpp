@@ -137,7 +137,7 @@ OMX_ERRORTYPE omx_venc::component_init(OMX_STRING role)
     return eRet;
   }
 
-  handle = new venc_dev(this);
+  handle = new venc_dev();
 
   if(handle == NULL)
   {
@@ -1425,19 +1425,9 @@ OMX_U32 omx_venc::dev_resume(void)
   return handle->venc_resume();
 }
 
-OMX_U32 omx_venc::dev_start_done(void)
+bool omx_venc::dev_use_buf(void *buf_addr,unsigned port)
 {
-  return handle->venc_start_done();
-}
-
-OMX_U32 omx_venc::dev_stop_done(void)
-{
-  return handle->venc_stop_done();
-}
-
-bool omx_venc::dev_use_buf(void *buf_addr,unsigned port,unsigned index)
-{
-  return handle->venc_use_buf(buf_addr,port,index);
+  return handle->venc_use_buf(buf_addr,port);
 }
 
 bool omx_venc::dev_free_buf(void *buf_addr,unsigned port)
@@ -1445,14 +1435,14 @@ bool omx_venc::dev_free_buf(void *buf_addr,unsigned port)
   return handle->venc_free_buf(buf_addr,port);
 }
 
-bool omx_venc::dev_empty_buf(void *buffer, void *pmem_data_buf,unsigned index,unsigned fd)
+bool omx_venc::dev_empty_buf(void *buffer, void *pmem_data_buf)
 {
-  return  handle->venc_empty_buf(buffer, pmem_data_buf,index,fd);
+  return  handle->venc_empty_buf(buffer, pmem_data_buf);
 }
 
-bool omx_venc::dev_fill_buf(void *buffer, void *pmem_data_buf,unsigned index,unsigned fd)
+bool omx_venc::dev_fill_buf(void *buffer, void *pmem_data_buf)
 {
-  return handle->venc_fill_buf(buffer, pmem_data_buf,index,fd);
+  return handle->venc_fill_buf(buffer, pmem_data_buf);
 }
 
 bool omx_venc::dev_get_seq_hdr(void *buffer, unsigned size, unsigned *hdrlen)

@@ -35,9 +35,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "omx_video_common.h"
 #include <linux/msm_vidc_enc.h>
 #include <pthread.h>
-#include <linux/videodev2.h>
-#include <poll.h>
-#define TIMEOUT 5000
+
 #define MAX_RECON_BUFFERS 4
 
 void* async_venc_message_thread (void *);
@@ -45,7 +43,7 @@ void* async_venc_message_thread (void *);
 class venc_dev
 {
 public:
-  venc_dev(class omx_venc *venc_class); //constructor
+  venc_dev(); //constructor
   ~venc_dev(); //des
 
   bool venc_open(OMX_U32);
@@ -58,12 +56,10 @@ public:
   bool venc_set_meta_mode(bool);
 #endif
   unsigned venc_resume(void);
-  unsigned venc_start_done(void);
-  unsigned venc_stop_done(void);
-  bool venc_use_buf(void*, unsigned,unsigned);
+  bool venc_use_buf(void*, unsigned);
   bool venc_free_buf(void*, unsigned);
-  bool venc_empty_buf(void *, void *,unsigned,unsigned);
-  bool venc_fill_buf(void *, void *,unsigned,unsigned);
+  bool venc_empty_buf(void *, void *);
+  bool venc_fill_buf(void *, void *);
 
   bool venc_get_buf_req(unsigned long *,unsigned long *,
                         unsigned long *,unsigned long);
@@ -102,7 +98,7 @@ public:
   bool m_max_allowed_bitrate_check;
   int m_eProfile;
   int m_eLevel;
-  int etb_count;
+
 private:
   struct venc_basecfg             m_sVenc_cfg;
   struct venc_ratectrlcfg         rate_ctrl;
