@@ -29,9 +29,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __OMX_VENC__H
 
 #include <unistd.h>
-#include "video_encoder_device_copper.h"
 #include "omx_video_base.h"
+
+#ifdef _COPPER_
+#include "video_encoder_device_copper.h"
+#else
 #include "video_encoder_device.h"
+#endif
 
 extern "C" {
   OMX_API void * get_omx_component_factory_fn(void);
