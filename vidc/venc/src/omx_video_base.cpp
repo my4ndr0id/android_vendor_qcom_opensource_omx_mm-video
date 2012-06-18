@@ -1766,6 +1766,12 @@ OMX_ERRORTYPE  omx_video::get_parameter(OMX_IN OMX_HANDLETYPE     hComp,
        DEBUG_PRINT_HIGH("QOMX_IndexParamVideoSyntaxHdr");
        QOMX_EXTNINDEX_PARAMTYPE* pParam =
           reinterpret_cast<QOMX_EXTNINDEX_PARAMTYPE*>(paramData);
+       if (pParam->pData == NULL)
+       {
+         DEBUG_PRINT_ERROR("Error: Data buffer is NULL");
+         eRet = OMX_ErrorBadParameter;
+         break;
+       }
        BITMASK_SET(&m_flags, OMX_COMPONENT_LOADED_START_PENDING);
        if(dev_loaded_start())
        {
